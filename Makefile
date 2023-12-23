@@ -5,7 +5,11 @@ il/co/psagot/trade1/session.http: il/co/psagot/trade1/login.json
 	cat $< | jq ".Login.SessionKey" -r | xargs printf "session: %s\n" > $@
 
 il/co/psagot/trade1/account.json: il/co/psagot/trade1/session.http
-	curl https://trade1.psagot.co.il:9005/v2/json/account/view --get --data account=150-52582 --header @$< -o $@
+	curl https://trade1.psagot.co.il:9005/v2/json/account/view \
+	       	--get \
+		--data account=150-52582\
+	       	--header @$< \
+		-o $@
 
 il/co/psagot/trade1/holdings.json: il/co/psagot/trade1/account.json
 	cat $< | jq ".View.Account.AccountPosition.Balance" > $@
@@ -47,6 +51,9 @@ com/portfolio-insight/radar.csv: com/portfolio-insight/radar.xlsx
 	      	 --insert \
 	       	 --db postgresql:// \
 	       	 --create-if-not-exists
+
+schema.sql:
+	pg_dump --schema-only --no-owner | sed -e '/^--/d' > $@
 
 clean:
 	rm -rf com il/co/psagot/trade1/login.json
