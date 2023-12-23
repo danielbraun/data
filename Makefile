@@ -1,12 +1,11 @@
 com/portfolio-insight/radar.xlsx:
-	curl -s https://www.portfolio-insight.com/dividend-radar | pup "a[data-gatrack] attr{href}" | xargs curl -o $@
+	curl -s https://www.portfolio-insight.com/dividend-radar | pup "a[data-gatrack] attr{href}" | xargs curl -o $@ --create-dirs
 
 com/portfolio-insight/radar.csv: com/portfolio-insight/radar.xlsx
 	in2csv $< --sheet All --skip-lines 2 | sed 's/ %//' > $@
 
 %.csv:
-	mkdir -p $(@D)
-	curl "http://localhost:3000/$@" -o $@ -f
+	curl "http://localhost:3000/$@" -o $@ -f --create-dirs
 
 %.sqlinsert: %.csv
 	psql -c 'truncate "$(subst /,_,$*)"' || true
@@ -15,8 +14,3 @@ com/portfolio-insight/radar.csv: com/portfolio-insight/radar.xlsx
 	      	 --insert \
 	       	 --db postgresql:// \
 	       	 --create-if-not-exists
-
-clean: $(shell find -name "*.csv")
-	rm -f $^
-
-.PHONY: all import clean
