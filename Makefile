@@ -1,18 +1,22 @@
 il/co/psagot/trade1/login.json: il/co/psagot/trade1/credentials.json
-	cat $< | curl "https://trade1.psagot.co.il:9005/v2/json/login" --data @/dev/stdin -o $@
+	cat $< | curl "https://trade1.psagot.co.il:9005/v2/json/login"  -f --data @/dev/stdin -o $@
 
 il/co/psagot/trade1/session.http: il/co/psagot/trade1/login.json
 	cat $< | jq ".Login.SessionKey" -r | xargs printf "session: %s\n" > $@
 
 il/co/psagot/trade1/account.json: il/co/psagot/trade1/session.http
 	curl https://trade1.psagot.co.il:9005/v2/json/account/view \
+		-f \
 	       	--get \
 		--data account=150-52582\
 	       	--header @$< \
 		-o $@
 
 il/co/psagot/trade1/holdings.json: il/co/psagot/trade1/account.json
-	cat $< | jq ".View.Account.AccountPosition.Balance" > $@
+	cat $< \
+	       	| jq ".View.Account.AccountPosition.Balance"\
+		| sed 's/\(BaseRateChangePercentage": \)"0"/\1"0.0"/'\
+		> $@
 
 il/co/psagot/trade1/currencies.json: il/co/psagot/trade1/account.json
 	cat $< | jq ".View.Account.OnlineCashByCurrency" > $@
@@ -32,7 +36,7 @@ il/co/psagot/trade1/transactions.json: il/co/psagot/trade1/session.http
 		> $@
 
 com/portfolio-insight/radar.xlsx:
-	curl -s https://www.portfolio-insight.com/dividend-radar | pup "a[data-gatrack] attr{href}" | xargs curl -o $@ --create-dirs
+	curl -fs https://www.portfolio-insight.com/dividend-radar | pup "a[data-gatrack] attr{href}" | xargs curl -f -o $@ --create-dirs
 
 com/portfolio-insight/radar.csv: com/portfolio-insight/radar.xlsx
 	in2csv $< --sheet All --skip-lines 2 | sed 's/ %//' > $@
@@ -41,7 +45,7 @@ com/portfolio-insight/radar.csv: com/portfolio-insight/radar.xlsx
 	json2csv < $< > $@
 
 %.csv:
-	curl "http://localhost:3000/$@" -o $@ -f --create-dirs
+	curl "http://localhost:3000/$@" -f -o $@ -f --create-dirs
 
 %.sqlinsert: %.csv
 	psql -c 'truncate "$(subst /,_,$*)"' || true
