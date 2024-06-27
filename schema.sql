@@ -101,7 +101,7 @@ CREATE TABLE public."com_portfolio-insight_radar" (
     "DGR 10Y" numeric,
     "TTR 1Y" numeric NOT NULL,
     "TTR 3Y" numeric NOT NULL,
-    "Fair Value" character varying NOT NULL,
+    "Fair Value" character varying,
     "FV_2" numeric NOT NULL,
     y character varying NOT NULL,
     "Streak Basis" character varying NOT NULL,
@@ -118,7 +118,7 @@ CREATE TABLE public."com_portfolio-insight_radar" (
     "P/BV" numeric NOT NULL,
     "PEG" numeric NOT NULL,
     "New Member" boolean,
-    "Industry" character varying NOT NULL
+    "Industry" character varying
 );
 
 
@@ -407,7 +407,7 @@ CREATE TABLE public.il_co_psagot_trade1_holdings (
     "EquityNumber" numeric NOT NULL,
     "BaseRate" numeric NOT NULL,
     "LastRate" numeric NOT NULL,
-    "BaseRateChangePercentage" boolean NOT NULL,
+    "BaseRateChangePercentage" numeric NOT NULL,
     "MorningNV" numeric NOT NULL,
     "MorningVL" numeric NOT NULL,
     "OnlineNV" numeric NOT NULL,
@@ -468,7 +468,8 @@ CREATE VIEW public.il_co_psagot_portfolio AS
     (s."Annualized" * h.amount) AS cash_flow,
     ((s.close - h.cost) * h.amount) AS profit,
     s.dividend_yield_recent,
-    s2.close AS usdils
+    s2.close AS usdils,
+    round(((s.close - h.cost) / s."Annualized"), 2) AS capgains_over_cashflow
    FROM ((public.il_co_psagot_holdings_short h
      LEFT JOIN public.finance_stocks_full s ON ((h.ticker = (s.name)::text)))
      LEFT JOIN public.finance_stocks_full s2 ON (((s2.name)::text = 'USDILS'::text)));
